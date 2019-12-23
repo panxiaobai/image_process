@@ -1,0 +1,109 @@
+import cv2 as cv
+import numpy as np
+import sys
+sys.setrecursionlimit(1000000)
+class MooreEdge:
+
+    def erase_connected_block(self,start_point):
+        x=start_point[0]
+        y=start_point[1]
+
+        q=[[x,y]]
+        while q:
+
+            x=q[0][0]
+            y=q[0][1]
+            #print(x, y,q)
+            del q[0]
+            self.img[x][y]=255
+            if self.img[x-1][y-1]==0:
+                self.img[x-1][y-1]=255
+                q.append([x-1,y-1])
+            if self.img[x-1][y]==0:
+                self.img[x - 1][y ] = 255
+                q.append([x-1,y])
+            if self.img[x-1][y+1]==0:
+                self.img[x - 1][y + 1] = 255
+                q.append([x-1,y+1])
+            if self.img[x][y-1]==0:
+                self.img[x ][y - 1] = 255
+                q.append([x,y-1])
+            if self.img[x][y+1]==0:
+                self.img[x ][y + 1] = 255
+                q.append([x,y+1])
+            if self.img[x+1][y-1]==0:
+                self.img[x + 1][y - 1] = 255
+                q.append([x+1,y-1])
+            if self.img[x+1][y]==0:
+                self.img[x + 1][y ] = 255
+                q.append([x-1,y])
+            if self.img[x+1][y+1]==0:
+                self.img[x + 1][y + 1] = 255
+                q.append([x+1,y+1])
+
+
+
+    def clock_wise_next(self,center_point,cur_point):
+        x=center_point[0]
+        y=center_point[1]
+        if cur_point==[x-1,y-1]:
+            return [x-1,y]
+        if cur_point==[x-1,y]:
+            return [x-1,y+1]
+        if cur_point==[x-1,y+1]:
+            return [x,y+1]
+        if cur_point==[x,y+1]:
+            return [x+1,y+1]
+        if cur_point==[x+1,y+1]:
+            return [x+1,y]
+        if cur_point==[x+1,y]:
+            return [x+1,y-1]
+        if cur_point==[x+1,y-1]:
+            return [x,y-1]
+        if cur_point==[x,y-1]:
+            return [x-1,y-1]
+
+    def moore_edge(self,image):
+        self.img=image.copy()
+        res=np.zeros(self.img.shape)
+        for i in range(self.img.shape[0]):
+            for j in range(self.img.shape[1]):
+                if self.img[i][j]==0:
+                    start_point=[i,j]
+                    res[start_point[0]][start_point[1]]=255
+                    b=[i,j]
+                    c=[i,j-1]
+                    last_point = c
+                    next_point = self.clock_wise_next(b, last_point)
+                    while next_point!=start_point:
+
+                        while self.img[next_point[0]][next_point[1]]!=0:
+                            last_point=next_point
+                            next_point = self.clock_wise_next(b, last_point)
+                        c=last_point
+                        b=next_point
+                        res[next_point[0]][next_point[1]]=255
+
+                        next_point = self.clock_wise_next(b, last_point)
+
+                    self.erase_connected_block(start_point)
+
+        return res
+
+
+image = cv.imread('pikaqiu.png')
+gray = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+ret, binary = cv.threshold(gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_TRIANGLE)
+
+me=MooreEdge()
+res=me.moore_edge(binary)
+print(res.shape)
+
+
+cv.namedWindow("binary")
+cv.imshow("binary",binary)
+
+cv.namedWindow("res")
+cv.imshow("res",res)
+
+cv.waitKey(0)
